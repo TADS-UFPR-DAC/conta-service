@@ -43,9 +43,9 @@ public class ContaController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/transferencia/{origem}")
+    @PutMapping("/transferencia/{origem}/{destino}")
     public ResponseEntity<Object> transferir(@PathVariable Long origem,
-                                             @RequestParam Long destino,
+                                             @PathVariable Long destino,
                                              @RequestParam Long valor){
         contaService.transferir(origem, destino, valor);
         return ResponseEntity.ok().build();
