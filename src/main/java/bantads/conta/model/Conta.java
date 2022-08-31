@@ -1,7 +1,6 @@
 package bantads.conta.model;
 
 import javax.persistence.*;
-import java.sql.Date;
 import java.time.LocalDate;
 
 @Entity
@@ -26,6 +25,22 @@ public class Conta {
 
     @Column(nullable = false, unique = false)
     private Long limite;
+
+    @Column(nullable = false, unique = false)
+    private Long salario;
+
+    public Conta() {
+    }
+
+    public Conta(Long id, Long idCliente, Long numero, Long saldo, LocalDate dataCriacao, Long limite, Long salario) {
+        this.id = id;
+        this.idCliente = idCliente;
+        this.numero = numero;
+        this.saldo = saldo;
+        this.dataCriacao = dataCriacao;
+        this.limite = limite;
+        this.salario = salario;
+    }
 
     public Long getId() {
         return id;
@@ -73,5 +88,13 @@ public class Conta {
 
     public void setLimite(Long limite) {
         this.limite = limite;
+    }
+
+    public Long getSalario() {
+        return salario;
+    }
+
+    public void setSalario(Long salario) {
+        this.salario = salario;
     }
 }

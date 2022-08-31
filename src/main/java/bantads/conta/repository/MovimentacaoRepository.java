@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface MovimentacaoRepository extends JpaRepository<Movimentacao, Long> {
 
-    List<Movimentacao> findAllByIdCliente(Long idCliente);
+    List<Movimentacao> findAllByIdClienteOrigem(Long idCliente);
 }

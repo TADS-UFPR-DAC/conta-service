@@ -1,11 +1,10 @@
 package bantads.conta.model;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table
 public class Movimentacao {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -15,7 +14,7 @@ public class Movimentacao {
     private LocalDateTime dataHora;
 
     @Column(nullable = false, unique = false)
-    private TipoMovimentacao tipoMovimentacao;
+    private String tipoMovimentacao;
 
     @Column(nullable = false, unique = false)
     private Long valor;
@@ -26,7 +25,10 @@ public class Movimentacao {
     @Column(nullable = true, unique = false)
     private Long idClienteDestino;
 
-    public Movimentacao(LocalDateTime dataHora, TipoMovimentacao tipoMovimentacao, Long valor, Long idClienteOrigem) {
+    public Movimentacao() {
+    }
+
+    public Movimentacao(LocalDateTime dataHora, String tipoMovimentacao, Long valor, Long idClienteOrigem) {
         this.dataHora = dataHora;
         this.tipoMovimentacao = tipoMovimentacao;
         this.valor = valor;
@@ -49,11 +51,11 @@ public class Movimentacao {
         this.dataHora = dataHora;
     }
 
-    public TipoMovimentacao getTipoMovimentacao() {
+    public String getTipoMovimentacao() {
         return tipoMovimentacao;
     }
 
-    public void setTipoMovimentacao(TipoMovimentacao tipoMovimentacao) {
+    public void setTipoMovimentacao(String tipoMovimentacao) {
         this.tipoMovimentacao = tipoMovimentacao;
     }
 

@@ -3,8 +3,6 @@ package bantads.conta.controller;
 import bantads.conta.model.Conta;
 import bantads.conta.model.Movimentacao;
 import bantads.conta.service.ContaService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -61,7 +59,7 @@ public class ContaController {
         return ResponseEntity.ok(contaService.deleteByIdCliente(idCliente));
     }
 
-    //TODO: autenticação
+    //TODO: autenticação (teoricamente não existe)
     //TODO: fazer o banco existir
     //TODO: fazer aqueles meme lá do banco q o razer quer
     //TODO: alimentar o banco

@@ -1,8 +1,6 @@
 package bantads.conta.service;
 
-import bantads.conta.exception.ApiRequestException;
 import bantads.conta.exception.ContaException;
-import bantads.conta.model.Cliente;
 import bantads.conta.model.Conta;
 import bantads.conta.model.Movimentacao;
 import bantads.conta.model.TipoMovimentacao;
@@ -14,10 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,13 +38,7 @@ public class ContaService {
         Optional<Conta> exists = contaRepository.findByIdCliente(conta.getIdCliente());
         if(exists.isPresent()) throw new ContaException("Conta para esse cliente já existe!", HttpStatus.BAD_REQUEST);
 
-        // TODO: pegar cliente do microsserviço de cliente pelo conta.getIdCliente para pegar o salário
-        // ou pedir pra ana fazer o front mandar o salário pra esse endpoint, q é bem mais fácil
-        Cliente cliente = new Cliente();
-        cliente.setSalario(3000L);
-        //
-
-        if(cliente.getSalario() >= 2000L) conta.setLimite(cliente.getSalario() / 2L);
+        if(conta.getSalario() >= 2000L) conta.setLimite(conta.getSalario() / 2L);
         else conta.setLimite(-1L);
         conta.setSaldo(0L);
         conta.setDataCriacao(LocalDate.now());
@@ -62,7 +52,7 @@ public class ContaService {
         if(contaOptional.isEmpty()) throw new ContaException("Conta não encontrada!", HttpStatus.NOT_FOUND);
 
         Movimentacao deposito = new Movimentacao(LocalDateTime.now(),
-                TipoMovimentacao.DEPOSITO,
+                TipoMovimentacao.DEPOSITO.name(),
                 valor,
                 idCliente);
 
@@ -79,7 +69,7 @@ public class ContaService {
         if(contaOptional.isEmpty()) throw new ContaException("Conta não encontrada!", HttpStatus.NOT_FOUND);
 
         Movimentacao saque = new Movimentacao(LocalDateTime.now(),
-                TipoMovimentacao.SAQUE,
+                TipoMovimentacao.SAQUE.name(),
                 valor,
                 idCliente);
 
@@ -99,7 +89,7 @@ public class ContaService {
         if(contaDestinoOptional.isEmpty()) throw new ContaException("Conta destino não encontrada!", HttpStatus.NOT_FOUND);
 
         Movimentacao transferencia = new Movimentacao(LocalDateTime.now(),
-                TipoMovimentacao.TRANSFERENCIA,
+                TipoMovimentacao.TRANSFERENCIA.name(),
                 valor,
                 idCliente);
         transferencia.setIdClienteDestino(idClienteDestino);
@@ -119,7 +109,7 @@ public class ContaService {
     }
 
     public List<Movimentacao> extrato(Long idCliente){
-        return movimentacaoRepository.findAllByIdCliente(idCliente);
+        return movimentacaoRepository.findAllByIdClienteOrigem(idCliente);
     }
 
     public String deleteByIdCliente(Long idCliente){
