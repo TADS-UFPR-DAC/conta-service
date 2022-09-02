@@ -8,7 +8,6 @@ import java.time.LocalDate;
 public class Conta {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(nullable = false, unique = true)

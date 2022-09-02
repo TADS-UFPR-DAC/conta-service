@@ -59,11 +59,4 @@ public class ContaController {
         return ResponseEntity.ok(contaService.deleteByIdCliente(idCliente));
     }
 
-    //TODO: autenticação (teoricamente não existe)
-    //TODO: fazer o banco existir
-    //TODO: fazer aqueles meme lá do banco q o razer quer
-    //TODO: alimentar o banco
-    //TODO: ajustar o serviço com o front
-    //TODO: perguntar se precisa da TipoMovimentação no banco
-    //TODO: aprender rabbitmq
 }
