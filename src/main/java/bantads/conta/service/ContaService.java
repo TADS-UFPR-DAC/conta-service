@@ -1,16 +1,16 @@
 package bantads.conta.service;
 
+import bantads.conta.create.repository.CreateContaRepository;
+import bantads.conta.create.repository.CreateMovimentacaoRepository;
 import bantads.conta.exception.ContaException;
 import bantads.conta.model.Conta;
 import bantads.conta.model.Movimentacao;
-import bantads.conta.create.repository.CreateContaRepository;
-import bantads.conta.create.repository.CreateMovimentacaoRepository;
 import bantads.conta.read.repository.ReadContaRepository;
 import bantads.conta.read.repository.ReadMovimentacaoRepository;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -19,10 +19,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static bantads.conta.config.RabbitMQConfig.*;
+
 @Service
 public class ContaService {
 
     private final Log log = LogFactory.getLog(getClass());
+
+    @Autowired
+    private AmqpTemplate rabbitTemplate;
 
     @Autowired
     private ReadContaRepository readContaRepository;
@@ -36,8 +41,8 @@ public class ContaService {
     @Autowired
     private CreateMovimentacaoRepository createMovimentacaoRepository;
 
-    public Optional<Conta> getByIdCliente(Long id){
-        Optional<Conta> conta = readContaRepository.findById(id);
+    public Optional<Conta> getByIdCliente(Long idCliente){
+        Optional<Conta> conta = readContaRepository.findByIdCliente(idCliente);
         if(conta.isEmpty()) throw new ContaException("Conta não encontrada!", HttpStatus.NOT_FOUND);
         return conta;
     }
@@ -57,8 +62,7 @@ public class ContaService {
         log.info("Salvando nova conta...");
         createContaRepository.save(conta);
 
-        // TODO: usar rabbitmq pra salvar novaConta no banco de read
-        readContaRepository.save(conta);
+        rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_SALVAR_CONTA, conta);
 
         return conta;
     }
@@ -77,16 +81,14 @@ public class ContaService {
         deposito.setId(id);
         createMovimentacaoRepository.save(deposito);
 
-        // TODO: usar rabbitmq pra salvar deposito no banco de read
-        readMovimentacaoRepository.save(deposito);
+        rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_SALVAR_MOVIMENTACAO, deposito);
 
         Conta conta = contaOptional.get();
         conta.setSaldo(conta.getSaldo() + valor);
 
         createContaRepository.save(conta);
 
-        // TODO: usar rabbitmq pra salvar conta no banco de read
-        readContaRepository.save(conta);
+        rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_SALVAR_CONTA, conta);
     }
 
     public void sacar(Long idCliente, Long valor){
@@ -102,8 +104,7 @@ public class ContaService {
         saque.setId(id);
         createMovimentacaoRepository.save(saque);
 
-        // TODO: usar rabbitmq pra salvar saque no banco de read
-        readMovimentacaoRepository.save(saque);
+        rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_SALVAR_MOVIMENTACAO, saque);
 
         Conta conta = contaOptional.get();
         if(conta.getSaldo() < valor) throw new ContaException("Saldo insuficiente", HttpStatus.BAD_REQUEST);
@@ -111,8 +112,7 @@ public class ContaService {
 
         createContaRepository.save(conta);
 
-        // TODO: usar rabbitmq pra salvar conta no banco de read
-        readContaRepository.save(conta);
+        rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_SALVAR_CONTA, conta);
     }
 
     public void transferir(Long idCliente, Long idClienteDestino, Long valor){
@@ -131,8 +131,7 @@ public class ContaService {
         transferencia.setId(id);
         createMovimentacaoRepository.save(transferencia);
 
-        // TODO: usar rabbitmq pra salvar transferencia no banco de read
-        readMovimentacaoRepository.save(transferencia);
+        rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_SALVAR_MOVIMENTACAO, transferencia);
 
         Conta conta = contaOptional.get();
         if(conta.getSaldo() < valor) throw new ContaException("Saldo insuficiente", HttpStatus.BAD_REQUEST);
@@ -140,16 +139,14 @@ public class ContaService {
 
         createContaRepository.save(conta);
 
-        // TODO: usar rabbitmq pra salvar conta no banco de read
-        readContaRepository.save(conta);
+        rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_SALVAR_CONTA, conta);
 
         Conta contaDestino = contaOptional.get();
         contaDestino.setSaldo(conta.getSaldo() + valor);
 
         createContaRepository.save(contaDestino);
 
-        // TODO: usar rabbitmq pra salvar contaDestino no banco de read
-        readContaRepository.save(contaDestino);
+        rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_SALVAR_CONTA, contaDestino);
     }
 
     public List<Movimentacao> extrato(Long idCliente){
@@ -157,12 +154,12 @@ public class ContaService {
     }
 
     public String deleteByIdCliente(Long idCliente){
-        Optional<Conta> exists = createContaRepository.deleteByIdCliente(idCliente);
+        Optional<Conta> exists = readContaRepository.findByIdCliente(idCliente);
         if(exists.isEmpty()) throw new ContaException("Cliente não encontrado para exclusão da conta", HttpStatus.NOT_FOUND);
         else {
+            createContaRepository.deleteByIdCliente(idCliente);
 
-            // TODO: usar rabbitmq pra excluir conta com idCliente no banco de read
-            readContaRepository.deleteByIdCliente(idCliente);
+            rabbitTemplate.convertAndSend(NOME_EXCHANGE, CHAVE_DELETAR_CONTA, idCliente);
 
             return "Conta deletada com sucesso!";
         }
