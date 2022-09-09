@@ -51,16 +51,20 @@ public class ContaService {
 
     public Optional<Conta> getByIdCliente(Long idCliente){
         Optional<Conta> conta = readContaRepository.findByIdCliente(idCliente);
-        if(conta.isEmpty())
-            throw new ContaException(HttpStatus.NOT_FOUND, "Conta não encontrada!", rabbitTemplate);
-        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, "success");
+        if(conta.isEmpty()){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("acharConta"));
+            throw new ContaException(HttpStatus.NOT_FOUND, "Conta não encontrada!");
+        }
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("acharConta"));
         return conta;
     }
 
     public Conta insert(Conta conta) {
         Optional<Conta> exists = readContaRepository.findByIdCliente(conta.getIdCliente());
-        if(exists.isPresent())
-            throw new ContaException(HttpStatus.BAD_REQUEST, "Conta para esse cliente já existe!", rabbitTemplate);
+        if(exists.isPresent()){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("inserirConta"));
+            throw new ContaException(HttpStatus.BAD_REQUEST, "Conta para esse cliente já existe!");
+        }
 
         if(conta.getSalario() >= 2000L) conta.setLimite(conta.getSalario() / 2L);
         else conta.setLimite(-1L);
@@ -75,13 +79,16 @@ public class ContaService {
 
         rabbitTemplate.convertAndSend(CONTA_EXCHANGE, CHAVE_SALVAR_CONTA, conta);
 
-        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, "success");
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("inserirConta"));
         return conta;
     }
 
     public void depositar(Long idCliente, Long valor){
         Optional<Conta> contaOptional = readContaRepository.findByIdCliente(idCliente);
-        if(contaOptional.isEmpty()) throw new ContaException(HttpStatus.NOT_FOUND, "Conta não encontrada!", rabbitTemplate);
+        if(contaOptional.isEmpty()) {
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("depositar"));
+            throw new ContaException(HttpStatus.NOT_FOUND, "Conta não encontrada!");
+        }
 
         Movimentacao deposito = new Movimentacao(LocalDateTime.now(),
                 TipoMovimentacao.DEPOSITO.name(),
@@ -102,13 +109,15 @@ public class ContaService {
 
         rabbitTemplate.convertAndSend(CONTA_EXCHANGE, CHAVE_SALVAR_CONTA, conta);
 
-        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, "success");
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("depositar"));
     }
 
     public void sacar(Long idCliente, Long valor){
         Optional<Conta> contaOptional = readContaRepository.findByIdCliente(idCliente);
-        if(contaOptional.isEmpty())
-            throw new ContaException(HttpStatus.NOT_FOUND, "Conta não encontrada!", rabbitTemplate);
+        if(contaOptional.isEmpty()){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("sacar"));
+            throw new ContaException(HttpStatus.NOT_FOUND, "Conta não encontrada!");
+        }
 
         Movimentacao saque = new Movimentacao(LocalDateTime.now(),
                 TipoMovimentacao.SAQUE.name(),
@@ -122,26 +131,35 @@ public class ContaService {
         rabbitTemplate.convertAndSend(CONTA_EXCHANGE, CHAVE_SALVAR_MOVIMENTACAO, saque);
 
         Conta conta = contaOptional.get();
-        if(conta.getSaldo() < valor)
-            throw new ContaException(HttpStatus.BAD_REQUEST, "Saldo insuficiente", rabbitTemplate);
+        if(conta.getSaldo() < valor){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("sacar"));
+            throw new ContaException(HttpStatus.BAD_REQUEST, "Saldo insuficiente");
+        }
         conta.setSaldo(conta.getSaldo() - valor);
 
         createContaRepository.save(conta);
 
         rabbitTemplate.convertAndSend(CONTA_EXCHANGE, CHAVE_SALVAR_CONTA, conta);
 
-        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, "success");
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("sacar"));
     }
 
     public void transferir(Long idCliente, Long idClienteDestino, Long valor){
-        if(Objects.equals(idCliente, idClienteDestino))
-            throw new ContaException(HttpStatus.BAD_REQUEST, "Conta origem e destino não podem ser iguais!", rabbitTemplate);
+        if(Objects.equals(idCliente, idClienteDestino)){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("transferir"));
+            throw new ContaException(HttpStatus.BAD_REQUEST, "Conta origem e destino não podem ser iguais!");
+        }
         Optional<Conta> contaOptional = readContaRepository.findByIdCliente(idCliente);
-        if(contaOptional.isEmpty())
-            throw new ContaException(HttpStatus.NOT_FOUND, "Conta origem não encontrada!", rabbitTemplate);
+        if(contaOptional.isEmpty()){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("transferir"));
+            throw new ContaException(HttpStatus.NOT_FOUND, "Conta origem não encontrada!");
+
+        }
         Optional<Conta> contaDestinoOptional = readContaRepository.findByIdCliente(idClienteDestino);
-        if(contaDestinoOptional.isEmpty())
-            throw new ContaException(HttpStatus.NOT_FOUND, "Conta destino não encontrada!", rabbitTemplate);
+        if(contaDestinoOptional.isEmpty()){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("transferir"));
+            throw new ContaException(HttpStatus.NOT_FOUND, "Conta destino não encontrada!");
+        }
 
         Movimentacao transferencia = new Movimentacao(LocalDateTime.now(),
                 TipoMovimentacao.TRANSFERENCIA.name(),
@@ -156,8 +174,10 @@ public class ContaService {
         rabbitTemplate.convertAndSend(CONTA_EXCHANGE, CHAVE_SALVAR_MOVIMENTACAO, transferencia);
 
         Conta conta = contaOptional.get();
-        if(conta.getSaldo() < valor)
-            throw new ContaException(HttpStatus.BAD_REQUEST, "Saldo insuficiente", rabbitTemplate);
+        if(conta.getSaldo() < valor){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("transferir"));
+            throw new ContaException(HttpStatus.BAD_REQUEST, "Saldo insuficiente");
+        }
         conta.setSaldo(conta.getSaldo() - valor);
 
         createContaRepository.save(conta);
@@ -171,23 +191,25 @@ public class ContaService {
 
         rabbitTemplate.convertAndSend(CONTA_EXCHANGE, CHAVE_SALVAR_CONTA, contaDestino);
 
-        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, "success");
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("transferir"));
     }
 
     public List<Movimentacao> extrato(Long idCliente){
-        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, "success");
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("extrato"));
         return readMovimentacaoRepository.findAllByIdClienteOrigem(idCliente);
     }
 
     public String deleteByIdCliente(Long idCliente){
         Optional<Conta> exists = readContaRepository.findByIdCliente(idCliente);
-        if(exists.isEmpty())
-            throw new ContaException(HttpStatus.NOT_FOUND, "Cliente não encontrado para exclusão da conta", rabbitTemplate);
+        if(exists.isEmpty()){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("deletarConta"));
+            throw new ContaException(HttpStatus.NOT_FOUND, "Cliente não encontrado para exclusão da conta");
+        }
 
         createContaRepository.delete(exists.get());
         rabbitTemplate.convertAndSend(CONTA_EXCHANGE, CHAVE_DELETAR_CONTA, exists.get());
 
-        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, "success");
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("deletarConta"));
         return "Conta deletada com sucesso!";
     }
 
@@ -214,5 +236,19 @@ public class ContaService {
     public void deletarConta(final Message message, final Conta conta) {
         log.info("Deletando conta do usuário de id " + conta.getIdCliente());
         readContaRepository.delete(conta);
+    }
+
+    private String successFormat(String endpoint){
+        return "{" +
+                "\"path\":\""+endpoint+"\"," +
+                "\"result\":\"success\"" +
+                "}";
+    }
+
+    private String errorFormat(String endpoint){
+        return "{" +
+                "\"path\":\""+endpoint+"\"," +
+                "\"result\":\"error\"" +
+                "}";
     }
 }
