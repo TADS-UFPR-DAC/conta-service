@@ -11,4 +11,5 @@ public interface ReadContaRepository extends JpaRepository<Conta, Long> {
 
     Optional<Conta> findByIdCliente(Long idCliente);
     Optional<Conta> findFirstByOrderByIdDesc();
+	Optional<Conta> findByStatus(String status);
 }

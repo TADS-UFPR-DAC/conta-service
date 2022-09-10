@@ -28,6 +28,16 @@ public class ContaController {
     public ResponseEntity<Optional<Conta>> getByIdCliente(@PathVariable Long idCliente) {
         return ResponseEntity.ok().body(contaService.getByIdCliente(idCliente));
     }
+    
+    @GetMapping("/gerente/{idGerente}")
+    public ResponseEntity<Optional<Conta>> getByIdGerente(@PathVariable Long idGerente) {
+        return ResponseEntity.ok().body(contaService.getByIdGerente(idGerente));
+    }
+    
+    @GetMapping("/status/{status}")
+    public ResponseEntity<Optional<Conta>> getByStatus(@PathVariable String status) {
+        return ResponseEntity.ok().body(contaService.getByStatus(status));
+    }
 
     @PostMapping("/")
     public ResponseEntity<Conta> save(@RequestBody Conta conta) {
