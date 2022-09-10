@@ -58,6 +58,16 @@ public class ContaService {
         rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("acharConta"));
         return conta;
     }
+    
+    public List<Conta> findAll(){
+        List<Conta> listaContas = readContaRepository.findAll();
+        if(listaContas.isEmpty()){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("acharContas"));
+            throw new ContaException(HttpStatus.NOT_FOUND, "Contas não encontradas!");
+        }
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("acharContas"));
+        return listaContas;
+    }
 
     public Conta insert(Conta conta) {
         Optional<Conta> exists = readContaRepository.findByIdCliente(conta.getIdCliente());

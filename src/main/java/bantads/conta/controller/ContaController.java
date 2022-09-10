@@ -19,6 +19,11 @@ public class ContaController {
     @Autowired
     ContaService contaService;
 
+    @GetMapping("/")
+    public ResponseEntity<List<Conta>> findAll() {
+        return ResponseEntity.ok().body(contaService.findAll());
+    }
+    
     @GetMapping("/{idCliente}")
     public ResponseEntity<Optional<Conta>> getByIdCliente(@PathVariable Long idCliente) {
         return ResponseEntity.ok().body(contaService.getByIdCliente(idCliente));
