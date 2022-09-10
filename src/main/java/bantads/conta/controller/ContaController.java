@@ -24,6 +24,11 @@ public class ContaController {
         return ResponseEntity.ok().body(contaService.findAll());
     }
     
+    @GetMapping("/top")
+    public ResponseEntity<List<Conta>> findTop5ByOrderBySaldoDesc() {
+        return ResponseEntity.ok().body(contaService.findTop5ByOrderBySaldoDesc());
+    }
+    
     @GetMapping("/{idCliente}")
     public ResponseEntity<Optional<Conta>> getByIdCliente(@PathVariable Long idCliente) {
         return ResponseEntity.ok().body(contaService.getByIdCliente(idCliente));

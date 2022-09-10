@@ -88,6 +88,16 @@ public class ContaService {
         rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("acharContas"));
         return listaContas;
     }
+    
+    public List<Conta> findTop5ByOrderBySaldoDesc(){
+        List<Conta> listaContas = readContaRepository.findTop5ByOrderBySaldoDesc();
+        if(listaContas.isEmpty()){
+            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("acharTopContas"));
+            throw new ContaException(HttpStatus.NOT_FOUND, "Contas top 5 não encontradas!");
+        }
+        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("acharTopContas"));
+        return listaContas;
+    }
 
     public Conta insert(Conta conta) {
         Optional<Conta> exists = readContaRepository.findByIdCliente(conta.getIdCliente());
@@ -281,4 +291,5 @@ public class ContaService {
                 "\"result\":\"error\"" +
                 "}";
     }
+
 }
