@@ -161,7 +161,7 @@ public class ContaService {
         rabbitTemplate.convertAndSend(CONTA_EXCHANGE, CHAVE_SALVAR_MOVIMENTACAO, saque);
 
         Conta conta = contaOptional.get();
-        if(conta.getSaldo() < valor){
+        if(conta.getSaldo() + conta.getLimite() < valor){
             rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("sacar"));
             throw new ContaException(HttpStatus.BAD_REQUEST, "Saldo insuficiente");
         }
