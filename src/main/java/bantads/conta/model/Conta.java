@@ -12,9 +12,6 @@ public class Conta {
 
     @Id
     private Long id;
-    
-    @Column(nullable = true, unique = false)
-    private String status;
 
     @Column(nullable = false, unique = true)
     private Long idCliente;
@@ -40,9 +37,8 @@ public class Conta {
     public Conta() {
     }
 
-    public Conta(Long id, String status, Long idCliente, Long idGerente, Long numero, Long saldo, LocalDate dataCriacao, Long limite, Long salario) {
+    public Conta(Long id, Long idCliente, Long idGerente, Long numero, Long saldo, LocalDate dataCriacao, Long limite, Long salario) {
         this.id = id;
-        this.status = status;
         this.idCliente = idCliente;
         this.idGerente = idGerente;
         this.numero = numero;
@@ -58,14 +54,6 @@ public class Conta {
 
     public void setId(Long id) {
         this.id = id;
-    }
-    
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public Long getIdCliente() {
