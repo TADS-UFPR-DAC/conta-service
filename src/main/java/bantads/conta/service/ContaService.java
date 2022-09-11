@@ -69,16 +69,6 @@ public class ContaService {
         return conta;
     }
     
-    public Optional<Conta> getByStatus(String status){
-        Optional<Conta> conta = readContaRepository.findByStatus(status);
-        if(conta.isEmpty()){
-            rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, errorFormat("acharConta"));
-            throw new ContaException(HttpStatus.NOT_FOUND, "Contas não encontradas!");
-        }
-        rabbitTemplate.convertAndSend(MENSAGEM_EXCHANGE, CHAVE_MENSAGEM, successFormat("acharConta"));
-        return conta;
-    }
-    
     public List<Conta> findAll(){
         List<Conta> listaContas = readContaRepository.findAll();
         if(listaContas.isEmpty()){
